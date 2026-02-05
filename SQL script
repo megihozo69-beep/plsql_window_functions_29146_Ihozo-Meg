@@ -134,4 +134,4 @@ FROM sales
 GROUP BY customer_id;
 
 
-Just tell me 👍
+
