@@ -1,6 +1,6 @@
 1. Create Database
-CREATE DATABASE coffee_shop_analysis;
-USE coffee_shop_analysis;
+CREATE DATABASE coffeeshop;
+USE coffeeshop;
 
 2. Create Tables (Schema)
 customers table
