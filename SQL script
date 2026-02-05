@@ -1,0 +1,131 @@
+1. Create Database
+CREATE DATABASE coffee_shop_analysis;
+USE coffee_shop_analysis;
+
+2. Create Tables (Schema)
+customers table
+CREATE TABLE customers (
+    customer_id INT PRIMARY KEY,
+    customer_name VARCHAR(100),
+    visit_date DATE,
+    day_type VARCHAR(10) CHECK (day_type IN ('Weekday', 'Weekend'))
+);
+
+ products table
+CREATE TABLE products (
+    product_id INT PRIMARY KEY,
+    product_name VARCHAR(100),
+    category VARCHAR(50),
+    price DECIMAL(6,2)
+);
+
+sales table
+CREATE TABLE sales (
+    sale_id INT PRIMARY KEY,
+    customer_id INT,
+    product_id INT,
+    quantity INT,
+    sale_date DATE,
+    FOREIGN KEY (customer_id) REFERENCES customers(customer_id),
+    FOREIGN KEY (product_id) REFERENCES products(product_id)
+);
+
+3. Sample Data (Optional but Recommended)
+Insert customers
+
+INSERT INTO customers VALUES
+(1, 'Alice', '2025-01-06', 'Weekday'),
+(2, 'Bob', '2025-01-07', 'Weekday'),
+(3, 'Chris', '2025-01-11', 'Weekend'),
+(4, 'Diana', '2025-01-12', 'Weekend'),
+(5, 'Eric', '2025-01-13', 'Weekday');
+
+Insert products
+INSERT INTO products VALUES
+(1, 'Espresso', 'Coffee', 2.50),
+(2, 'Cappuccino', 'Coffee', 3.00),
+(3, 'Latte', 'Coffee', 3.50),
+(4, 'Tea', 'Non-Coffee', 2.00),
+(5, 'Hot Chocolate', 'Non-Coffee', 3.00);
+
+Insert sales
+INSERT INTO sales VALUES
+(1, 1, 1, 2, '2025-01-06'),
+(2, 1, 2, 1, '2025-01-06'),
+(3, 2, 3, 1, '2025-01-07'),
+(4, 3, 2, 3, '2025-01-11'),
+(5, 3, 3, 2, '2025-01-11'),
+(6, 4, 1, 1, '2025-01-12'),
+(7, 4, 4, 2, '2025-01-12');
+
+4. SQL JOIN Queries
+4.1 INNER JOIN
+SELECT c.customer_name, p.product_name, s.quantity
+FROM sales s
+INNER JOIN customers c ON s.customer_id = c.customer_id
+INNER JOIN products p ON s.product_id = p.product_id;
+
+4.2 LEFT JOIN (Customers with no purchases)
+SELECT c.customer_name
+FROM customers c
+LEFT JOIN sales s ON c.customer_id = s.customer_id
+WHERE s.sale_id IS NULL;
+
+4.3 RIGHT JOIN (Products never sold)
+SELECT p.product_name
+FROM sales s
+RIGHT JOIN products p ON s.product_id = p.product_id
+WHERE s.sale_id IS NULL;
+
+4.4 FULL OUTER JOIN (MySQL-compatible version using UNION)
+SELECT c.customer_name, p.product_name
+FROM customers c
+LEFT JOIN products p ON c.customer_id = p.product_id
+UNION
+SELECT c.customer_name, p.product_name
+FROM customers c
+RIGHT JOIN products p ON c.customer_id = p.product_id;
+
+4.5 SELF JOIN (Customers visiting same day)
+SELECT c1.customer_name AS customer1,
+       c2.customer_name AS customer2,
+       c1.visit_date
+FROM customers c1
+JOIN customers c2
+ON c1.visit_date = c2.visit_date
+AND c1.customer_id <> c2.customer_id;
+
+5. Window Functions
+5.1 RANK() – Top-selling drinks by day type
+SELECT p.product_name,
+       c.day_type,
+       SUM(s.quantity) AS total_sold,
+       RANK() OVER (PARTITION BY c.day_type ORDER BY SUM(s.quantity) DESC) AS sales_rank
+FROM sales s
+JOIN customers c ON s.customer_id = c.customer_id
+JOIN products p ON s.product_id = p.product_id
+GROUP BY p.product_name, c.day_type;
+
+5.2 SUM() OVER() – Running total of daily sales
+SELECT sale_date,
+       SUM(quantity) AS daily_sales,
+       SUM(SUM(quantity)) OVER (ORDER BY sale_date) AS running_total
+FROM sales
+GROUP BY sale_date;
+
+5.3 LAG() – Day-to-day sales comparison
+SELECT sale_date,
+       SUM(quantity) AS daily_sales,
+       LAG(SUM(quantity)) OVER (ORDER BY sale_date) AS previous_day_sales
+FROM sales
+GROUP BY sale_date;
+
+5.4 NTILE(4) – Customer purchase segmentation
+SELECT customer_id,
+       SUM(quantity) AS total_items,
+       NTILE(4) OVER (ORDER BY SUM(quantity)) AS customer_quartile
+FROM sales
+GROUP BY customer_id;
+
+
+Just tell me 👍
